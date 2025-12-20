@@ -1,0 +1,22 @@
+<% layout('layouts/boilerplate') %>
+
+<div class="container mt-4">
+  <h1>Verify your email</h1>
+  <p>An OTP has been sent to <strong><%= emailMasked %></strong>. Enter the code below to complete sign up.</p>
+
+  <form action="/signup/verify" method="POST" class="needs-validation" novalidate>
+    <div class="mb-3">
+      <label for="otp" class="form-label">OTP</label>
+      <input type="text" class="form-control" id="otp" name="otp" required />
+    </div>
+    <button class="btn btn-primary">Verify</button>
+  </form>
+
+  <form action="/signup/resend" method="POST" class="mt-2">
+    <button class="btn btn-link">Resend OTP</button>
+  </form>
+
+  <div class="mt-3 alert alert-info">
+    <strong>Note:</strong> For security, the OTP is sent only to the email address — it will not be shown on this page. If you don't receive the email, please check your spam folder or contact support.
+  </div>
+</div>

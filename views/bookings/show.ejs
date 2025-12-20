@@ -1,0 +1,16 @@
+<% layout('layouts/boilerplate') %>
+<div class="container">
+  <h1>Booking for <%= booking.listing.title %></h1>
+  <p>From: <%= booking.startDate.toDateString() %></p>
+  <p>To: <%= booking.endDate.toDateString() %></p>
+  <p>Total: &#8377;<%= booking.totalPrice %></p>
+  <p>Paid: <%= booking.paid ? 'Yes' : 'No' %></p>
+  <% if(!booking.paid) { %>
+    <a href="/bookings/pay/<%= booking._id %>" class="btn">Pay Now</a>
+    <% if (isStripeMock) { %>
+      <form method="POST" action="/bookings/<%= booking._id %>/pay" style="display:inline">
+        <button type="submit" class="btn btn-warning">Simulate Payment (DEV)</button>
+      </form>
+    <% } %>
+  <% } %>
+</div>

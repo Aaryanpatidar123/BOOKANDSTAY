@@ -1,0 +1,7 @@
+<% include ../layouts/boilerplate.ejs %>
+<div class="container">
+  <h1>Booking Confirmed</h1>
+  <p>Your booking for <%= booking.listing.title %> from <%= booking.startDate.toDateString() %> to <%= booking.endDate.toDateString() %> is confirmed.</p>
+  <p>Total paid: ₹<%= booking.totalPrice %></p>
+  <a href="/listings/<%= booking.listing._id %>">Back to listing</a>
+</div>

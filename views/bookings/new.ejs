@@ -1,0 +1,154 @@
+<% layout('layouts/boilerplate') %>
+
+<div class="container my-4">
+  <div class="row justify-content-center">
+    <div class="col-md-7">
+      <div class="card shadow-sm">
+        <div class="card-body">
+          <h3 class="card-title mb-3">Book: <%= listing.title %></h3>
+
+          <form action="/bookings/create/<%= listing._id %>" method="POST" class="needs-validation" novalidate>
+            <div class="mb-3">
+              <label for="startDate" class="form-label">Start date</label>
+              <input id="startDate" type="date" name="startDate" class="form-control" required />
+              <div class="invalid-feedback">Please choose a valid start date.</div>
+            </div>
+
+            <div class="mb-3">
+              <label for="endDate" class="form-label">End date</label>
+              <input id="endDate" type="date" name="endDate" class="form-control" required />
+              <div class="invalid-feedback">Please choose a valid end date (must be after start date).</div>
+            </div>
+
+            <div class="mb-3">
+              <label for="totalPrice" class="form-label">Total price (INR)</label>
+              <input id="totalPrice" type="number" name="totalPrice" step="0.01" value="<%= listing.price || 100 %>" class="form-control" required readonly />
+              <input type="hidden" id="pricePerNightValue" value="<%= listing.price || 0 %>" />
+              <div id="nightsInfo" class="form-text">Nights: 1 — Price per night: &#8377;<%= listing.price || 'N/A' %></div>
+            </div>
+
+            <div class="d-flex justify-content-between align-items-center mt-3">
+              <a href="/listings/<%= listing._id %>" class="btn btn-outline-secondary">Back</a>
+              <button type="submit" class="btn btn-primary">Proceed to Payment</button>
+            </div>
+          </form>
+        </div>
+      </div>
+      <p class="text-muted mt-2">You will be redirected to the payment gateway after submitting the booking.</p>
+    </div>
+  </div>
+</div>
+
+<script>
+  (function(){
+    const form = document.querySelector('.needs-validation');
+    if(!form) return;
+    const pricePerNight = Number(document.getElementById('pricePerNightValue').value || 0);
+    const startInput = document.getElementById('startDate');
+    const endInput = document.getElementById('endDate');
+    const totalInput = document.getElementById('totalPrice');
+    const nightsInfo = document.getElementById('nightsInfo');
+
+    function fmtDate(d) {
+      const pad = n => n < 10 ? '0' + n : n;
+      return `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}`;
+    }
+
+    function setInitialMinDates(){
+      const today = new Date();
+      const tomorrow = new Date(today.getFullYear(), today.getMonth(), today.getDate()+1);
+      startInput.min = fmtDate(tomorrow);
+      const dayAfterStart = new Date(tomorrow.getFullYear(), tomorrow.getMonth(), tomorrow.getDate()+1);
+      endInput.min = fmtDate(dayAfterStart);
+      if(!startInput.value) startInput.value = fmtDate(tomorrow);
+      if(!endInput.value) endInput.value = fmtDate(dayAfterStart);
+    }
+
+    function ensureStartNotPast(){
+      const minStart = new Date(startInput.min);
+      const curStart = startInput.value ? new Date(startInput.value) : null;
+      if(curStart && curStart < minStart){
+        startInput.value = startInput.min;
+      }
+    }
+
+    function updateEndMinBasedOnStart(){
+      const startVal = startInput.value ? new Date(startInput.value) : null;
+      if(!startVal) return;
+      const minEnd = new Date(startVal.getFullYear(), startVal.getMonth(), startVal.getDate()+1);
+      endInput.min = fmtDate(minEnd);
+      if(endInput.value && new Date(endInput.value) < minEnd){
+        endInput.value = fmtDate(minEnd);
+      }
+    }
+
+    function computeAndUpdateTotal() {
+      const start = startInput.value;
+      const end = endInput.value;
+      if(!(start && end)) {
+        totalInput.value = (pricePerNight || 0).toFixed(2);
+        nightsInfo.textContent = `Nights: - — Price per night: ₹${pricePerNight || 'N/A'}`;
+        return;
+      }
+      const s = new Date(start);
+      const e = new Date(end);
+      if(e <= s) {
+        totalInput.value = (pricePerNight || 0).toFixed(2);
+        nightsInfo.textContent = `Invalid date range`;
+        return;
+      }
+      const MS_PER_DAY = 24*60*60*1000;
+      const nights = Math.max(1, Math.ceil((e - s)/MS_PER_DAY));
+      const total = nights * pricePerNight;
+      totalInput.value = total.toFixed(2);
+      nightsInfo.textContent = `Nights: ${nights} — Price per night: ₹${pricePerNight || 'N/A'}`;
+    }
+
+    startInput.addEventListener('change', function(){
+      ensureStartNotPast();
+      updateEndMinBasedOnStart();
+      computeAndUpdateTotal();
+    });
+    endInput.addEventListener('change', function(){
+      computeAndUpdateTotal();
+    });
+
+    form.addEventListener('submit', function(e){
+      // reset invalid state
+      endInput.classList.remove('is-invalid');
+      startInput.classList.remove('is-invalid');
+
+      const start = startInput.value;
+      const end = endInput.value;
+      if(!(start && end)){
+        // Let browser show required errors
+        return;
+      }
+      // enforce start date not in past and must be >= tomorrow
+      const startDateMin = new Date(startInput.min);
+      const chosenStart = new Date(start);
+      if(chosenStart < startDateMin){
+        e.preventDefault();
+        e.stopPropagation();
+        startInput.classList.add('is-invalid');
+        startInput.nextElementSibling.textContent = 'Start date must be from tomorrow onwards.';
+        return;
+      }
+      if(new Date(end) <= new Date(start)){
+        e.preventDefault();
+        e.stopPropagation();
+        endInput.classList.add('is-invalid');
+        endInput.nextElementSibling.textContent = 'End date must be after start date.';
+        return;
+      }
+      // ensure totalPrice is computed and set before submit
+      computeAndUpdateTotal();
+      form.classList.add('was-validated');
+    }, false);
+
+    // initialize
+    setInitialMinDates();
+    updateEndMinBasedOnStart();
+    computeAndUpdateTotal();
+  })();
+</script>

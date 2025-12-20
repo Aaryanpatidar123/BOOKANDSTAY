@@ -1,0 +1,41 @@
+<% layout('layouts/boilerplate') %>
+<div class="container my-4">
+  <div class="row justify-content-center">
+    <div class="col-md-8">
+      <div class="card shadow-sm">
+        <div class="card-body">
+          <h3>Payment Configuration</h3>
+          <p>Razorpay configured: <strong><%= isRazorConfigured ? 'Yes' : 'No' %></strong></p>
+          <p>PhonePe configured: <strong><%= isPhonePeConfigured ? 'Yes' : 'No' %></strong></p>
+
+          <form method="POST" action="/admin/pay-config">
+            <h5>Razorpay</h5>
+            <div class="mb-3">
+              <a href="/admin/email-config" class="btn btn-outline-secondary">Configure email / SMTP</a>
+            </div>
+            <div class="mb-3">
+              <label class="form-label">RAZORPAY_KEY_ID</label>
+              <input name="razor_id" class="form-control" value="<%= keyId %>" <%= isRazorConfigured ? '' : 'required' %> />
+            </div>
+            <div class="mb-3">
+              <label class="form-label">RAZORPAY_KEY_SECRET</label>
+              <input name="razor_secret" class="form-control" <%= isRazorConfigured ? '' : 'required' %> />
+            </div>
+
+            <h5 class="mt-4">PhonePe</h5>
+            <div class="mb-3">
+              <label class="form-label">PHONEPE_MERCHANT_ID</label>
+              <input name="phonepe_id" class="form-control" value="<%= phonepeId %>" <%= isPhonePeConfigured ? '' : 'required' %> />
+            </div>
+            <div class="mb-3">
+              <label class="form-label">PHONEPE_SECRET_KEY</label>
+              <input name="phonepe_secret" class="form-control" <%= isPhonePeConfigured ? '' : 'required' %> />
+            </div>
+
+            <button class="btn btn-primary">Save to .env</button>
+          </form>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

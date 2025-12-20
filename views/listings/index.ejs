@@ -1,0 +1,282 @@
+<% layout('layouts/boilerplate')%> 
+
+    <style>
+        /* Filters */
+        #filters{
+            display: flex;
+            flex-wrap: wrap;
+            align-items: center;
+            gap: 0.8rem 1.2rem;
+            padding: 1rem 0;
+            border-bottom: 1px solid rgba(0,0,0,0.05);
+            margin-bottom: 1.5rem;
+            background: #fff;
+        }
+        .filter{
+            text-align: center;
+            padding: 0.6rem 0.9rem;
+            border-radius: 8px;
+            margin-top: 0.2rem;
+            opacity: 0.9;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 0.2rem;
+            transition: transform 0.18s ease, box-shadow 0.18s ease, opacity 0.18s ease;
+            min-width: 68px;
+        }
+        .filter i{font-size:1.15rem}
+        .filter p{
+            font-size: 0.78rem;
+            margin:0;
+            color:#555;
+        }
+        .filter:hover{
+            transform: translateY(-3px);
+            cursor: pointer;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.06);
+            opacity: 1;
+        }
+        .filter.active{
+            background:#f8f8f9;
+            border: 1px solid #e6e6e8;
+            box-shadow: 0 4px 18px rgba(0,0,0,0.06);
+            transform: translateY(-4px) scale(1.02);
+            opacity: 1;
+        }
+
+        /* Grid layout */
+        .listing-grid{ display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 1.25rem; }
+        /* Ensure uniform card size */
+        .listing-card{ height:340px; overflow:hidden; display:flex; flex-direction:column; border-radius:8px; }
+        .listing-card .card-img-top{ height:42%; object-fit:cover; width:100%; display:block; }
+        /* Support cards rendered as Bootstrap column cards too */
+        .card.col.listing-card .card-img-top{ height:42%; object-fit:cover; width:100%; display:block; }
+
+        .card-body{ flex:1; display:flex; flex-direction:column; justify-content:space-between; padding:0.9rem; }
+
+        /* Title and details formatting with truncation */
+        .card-text b, .card-title{ display:block; font-size:1.05rem; line-height:1.1; margin-bottom:0.25rem; }
+        .card-title{ margin:0; font-weight:700; }
+        .card-sub{ color:#333; font-size:0.95rem; margin-bottom:0.5rem }
+        .card-desc{ color:#666; font-size:0.89rem; margin-top:0.3rem; max-height:2.6rem; overflow:hidden; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; }
+
+        .listing-category{ color:#666; font-size:0.85rem; margin-top:0.4rem }
+
+        /* Filter transition */
+        .listing-card{ opacity:1; transform: translateY(0); transition: opacity 220ms ease, transform 220ms ease; }
+        .listing-card.hidden{ opacity:0; transform: translateY(10px); pointer-events:none; height:0; overflow:hidden; }
+
+        /* Ensure link anchors inside single-grid occupy full card */
+        a.listing-link{ display:block; height:100%; color:inherit; text-decoration:none }
+        a.listing-link .listing-card{ height:100% }
+
+        /* Responsive tweaks */
+        @media (max-width:768px){
+            .filter p{ font-size:0.72rem }
+            .listing-card{ height:320px }
+            .listing-card .card-img-top{ height:45% }
+        }
+
+        /* Responsive tweaks */
+        @media (max-width:768px){
+            .filter p{ font-size:0.72rem }
+            .listing-card{ height:320px }
+        }
+
+        .tax-info{ display:none; }
+        .tax-toggle{ border: 1px solid black; border-radius: 1rem; height: 3.5rem; padding:1rem; margin-left: 5rem; display: flex; align-items: center; }
+    </style>
+
+    <div id="filters">
+        <div class="filter" data-cat="All">
+           <div><i class="fa-solid fa-list"></i></div>
+           <p>All</p> 
+        </div>
+        <div class="filter" data-cat="Trending">
+           <div><i  class="fa-solid fa-fire"></i></div>
+           <p>Trending</p> 
+        </div>
+         <div class="filter" data-cat="Rooms">
+           <div><i class="fa-solid fa-bed"></i></div>
+           <p>Rooms</p> 
+        </div>
+         <div class="filter" data-cat="Iconic Cities">
+           <div><i class="fa-solid fa-mountain-city"></i></div>
+           <p>Iconic Cities</p> 
+        </div>
+         <div class="filter" data-cat="Mountains">
+           <div><i class="fa-solid fa-mountain"></i></div>
+           <p>Mountains</p> 
+        </div>
+         <div class="filter" data-cat="Castles">
+           <div><i  class="fa-brands fa-fort-awesome"></i></div>
+           <p>Castles</p> 
+        </div>
+         <div class="filter" data-cat="Camping">
+           <div><i  class="fa-solid fa-campground"></i></div>
+           <p>Camping</p> 
+        </div>
+         <div class="filter" data-cat="Farms">
+           <div><i  class="fa-solid fa-cow"></i></div>
+           <p>Farms</p> 
+        </div>
+         <div class="filter" data-cat="Arctic">
+           <div><i  class="fa-solid fa-snowflake"></i></div>
+           <p>Arctic</p> 
+        </div>
+
+        <div class="tax-toggle">
+            <div class="form-check-reverse form-switch">
+  <input class="form-check-input" type="checkbox" role="switch" id="switchCheckDefault">
+  <label class="form-check-label" for="switchCheckDefault">Display total after taxes</label>
+</div>
+</div>
+
+    </div>
+
+
+
+
+    <!-- <section class="section">
+        <h2 class="section-title">Featured Category</h2>
+        <div class="category">
+            <div class="caregories-card" data-cat="All">All</div>
+            <div class="fa-solid fa-fire" data-cat="All">Trending</div>
+        </div>
+    </section> -->
+    <!-- Single filterable listings grid (top icons control visibility) -->
+    <!-- Listings grouped by category -->
+    <% for (let cat of categories) { %>
+        <section class="category-section mt-4" data-cat="<%= cat %>">
+            <h3 class="category-title"><%= cat %> <small class="text-muted">(<%= (listingsByCategory[cat]||[]).length %>)</small></h3>
+            <% const catListings = listingsByCategory[cat] || []; %>
+            <% if (catListings.length) { %>
+                <div class="row row-cols-lg-3 row-cols-md-2 row-cols-sm-1 mt-3">
+                    <% for (let listing of catListings) { %>
+                        <a href="/listings/<%= listing._id%>" class="listing-link">
+                            <div class="card col listing-card" data-category="<%= listing.category || 'Trending' %>">
+                                <img src="<%= (listing.image && listing.image.url) ? listing.image.url : (typeof listing.image === 'string' ? listing.image : 'https://via.placeholder.com/400x300?text=No+Image') %>"
+                                    class="card-img-top" alt="listing_image" style="height:20rem" />
+                                <div class="card-img-overlay"></div>
+                                <div class="card-body">
+                                    <p class="card-text">
+                                        <b>
+                                            <%= listing.title %>
+                                        </b><br />
+                                        &#8377;<%= (listing.price != null && listing.price !== '') ? Number(listing.price).toLocaleString('en-IN') : 'N/A' %>/night<i class="tax-info"> &nbsp; &nbsp; +18% GST</i><br />
+
+                                    </p>
+                                <p class="listing-category">Category: <span class="cat-val"><%= listing.category || 'Trending' %></span></p>
+                                </div>
+                            </div>
+                        </a>
+                    <% } %>
+                </div>
+            <% } else { %>
+                <p class="text-muted">No listings in this category yet.</p>
+            <% } %>
+        </section>
+    <% } %>
+
+
+
+    <!-- <ul>
+        <% for(let listing of allListings){ %>
+        <li><a href="/listings/<%=listing._id%>"><%= listing.title %></a></li>
+        <% } %>
+</ul> -->
+
+<!-- category filtering
+<script>
+    document.addEventListener("DOMContentLoaded", function () {
+    const categoryCards = document.querySelectorAll(".category-card");
+    const listingCards = document.querySelectorAll(".listing-card");
+
+    categoryCards.forEach(card => {
+        card.addEventListener("click", () => {
+            const cat = card.dataset.cat;
+
+            // Optional: highlight active category
+            categoryCards.forEach(c => c.classList.remove("active-category"));
+            card.classList.add("active-category");
+
+            listingCards.forEach(listing => {
+                const pCat = listing.dataset.category; // Make sure each listing has data-category
+                if (cat === "All" || pCat === cat) {
+                    listing.style.display = "block";
+                } else {
+                    listing.style.display = "none";
+                }
+            });
+        });
+    });
+});
+
+</script> -->
+
+
+<script>
+    let taxSwitch = document.getElementById("switchCheckDefault");
+    taxSwitch.addEventListener("click",()=>{
+       let taxInfo = document.getElementsByClassName("tax-info");
+       for(info of taxInfo){
+        if(info.style.display != "inline"){
+            info.style.display = "inline";
+        }else{
+             info.style.display = "none";
+        }
+       
+       }
+    });
+</script>
+
+<script>
+    // Category filtering: show the chosen category section in place (hide others) and scroll to it
+    (function(){
+        const filters = Array.from(document.querySelectorAll('#filters .filter'));
+        const sections = Array.from(document.querySelectorAll('.category-section'));
+
+        function setActive(filterEl){
+            filters.forEach(f=>f.classList.remove('active'));
+            if(filterEl) filterEl.classList.add('active');
+        }
+
+        function showAllSections(){
+            sections.forEach(s => s.style.display = 'block');
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+
+        function showOnlySection(cat){
+            sections.forEach(s => { s.style.display = (s.dataset.cat === cat) ? 'block' : 'none'; });
+            // scroll to selected section so it is visible (not the top filters)
+            const sec = document.querySelector('.category-section[data-cat="'+cat+'"]');
+            if(sec) sec.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }
+
+        filters.forEach(filter => {
+            filter.addEventListener('click', () => {
+                const cat = filter.dataset.cat;
+                setActive(filter);
+                // update URL param without reloading
+                const url = new URL(window.location.href);
+                if(cat === 'All') url.searchParams.delete('category');
+                else url.searchParams.set('category', cat);
+                history.replaceState(null, '', url);
+
+                if(cat === 'All'){
+                    showAllSections();
+                } else {
+                    showOnlySection(cat);
+                }
+            });
+        });
+
+        // initialize based on URL param
+        const params = new URLSearchParams(window.location.search);
+        const initialCat = params.get('category') || 'All';
+        const initialFilter = document.querySelector('#filters .filter[data-cat="' + initialCat + '"]') || document.querySelector('#filters .filter[data-cat="All"]');
+        setActive(initialFilter);
+        if(initialCat === 'All') showAllSections(); else showOnlySection(initialCat);
+    })();
+</script>

@@ -1,0 +1,122 @@
+<% layout('layouts/boilerplate') %>
+<div class="container my-4">
+  <div class="row justify-content-center">
+    <div class="col-md-8">
+      <div class="card shadow-sm">
+        <div class="card-body text-center">
+          <h3 class="mb-3">Pay for booking: <%= booking.listing.title %></h3>
+          <p>Amount: ₹<%= (booking.totalPrice).toLocaleString('en-IN') %></p>
+          <p id="statusMsg" class="text-muted">You will be redirected to the payment window shortly.</p>
+          <div class="d-flex justify-content-center gap-2">
+            <% if (typeof isMock !== 'undefined' && isMock) { %>
+              <button id="simulateBtn" class="btn btn-warning">Simulate Payment (DEV)</button>
+            <% } else { %>
+              <button id="payBtn" class="btn btn-primary">Pay with Razorpay</button>
+            <% } %>
+
+            <% if (process.env.PHONEPE_MERCHANT_ID) { %>
+              <button id="phonepeBtn" class="btn btn-success">Pay with PhonePe</button>
+            <% } else { %>
+              <button id="phonepeMockBtn" class="btn btn-outline-success">Simulate PhonePe (DEV)</button>
+            <% } %>
+
+            <a href="/bookings/<%= booking._id %>" class="btn btn-link">Back to booking</a>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<% if (typeof isMock !== 'undefined' && isMock) { %>
+<script>
+  (function(){
+    const simulateBtn = document.getElementById('simulateBtn');
+    const statusEl = document.getElementById('statusMsg');
+    simulateBtn.addEventListener('click', function(){
+      statusEl.textContent = 'Simulating payment...';
+      fetch(`/bookings/<%= booking._id %>/verify`, {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ mock: true, razorpay_order_id: '<%= razorOrderId %>' })
+      }).then(r => r.json()).then(data => {
+        if (data && data.ok) {
+          window.location = data.redirect;
+        } else {
+          statusEl.textContent = 'Simulation failed';
+        }
+      }).catch(err => { statusEl.textContent = 'Error'; console.error(err); });
+    });
+  })();
+</script>
+<% } else { %>
+<script src="https://checkout.razorpay.com/v1/checkout.js"></script>
+<script>
+  (function(){
+    const payBtn = document.getElementById('payBtn');
+    const statusEl = document.getElementById('statusMsg');
+    const options = {
+      key: '<%= razorKeyId %>',
+      amount: <%= amountPaise %>, // in paise
+      currency: 'INR',
+      name: '<%= booking.listing.title %>',
+      description: 'Booking payment',
+      order_id: '<%= razorOrderId %>',
+      handler: function (response) {
+        statusEl.textContent = 'Verifying payment...';
+        fetch(`/bookings/<%= booking._id %>/verify`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(response)
+        }).then(async r => {
+          const ct = (r.headers.get('content-type') || '').toLowerCase();
+          try {
+            if (ct.includes('application/json')) return await r.json();
+            const txt = await r.text();
+            return { ok: false, error: txt || `HTTP ${r.status}` };
+          } catch (e) {
+            return { ok: false, error: 'Invalid server response' };
+          }
+        }).then(data => {
+          if (data && data.ok) {
+            window.location = data.redirect;
+          } else if (data && data.error) {
+            statusEl.textContent = data.error;
+            console.error('Verification failed', data);
+          } else {
+            statusEl.textContent = 'Payment verification failed. Please contact support.';
+            console.error('Verification failed', data);
+          }
+        }).catch(err => {
+          statusEl.textContent = 'Verification error: ' + (err && err.message ? err.message : err);
+          console.error(err);
+        });
+      },
+      modal: {
+        ondismiss: function(){ statusEl.textContent = 'Payment window closed.'; }
+      }
+    };
+
+    function openCheckout(){
+      const rzp = new Razorpay(options);
+      rzp.open();
+    }
+
+    // Auto-open on page load
+    window.addEventListener('load', function(){ setTimeout(openCheckout, 300); });
+    payBtn.addEventListener('click', openCheckout);
+
+    // improve error reporting from server
+    function handleVerifyResponse(data) {
+      if (data && data.ok) {
+        window.location = data.redirect;
+      } else if (data && data.error) {
+        statusEl.textContent = data.error;
+        console.error('Verification error:', data.error);
+      } else {
+        statusEl.textContent = 'Payment verification failed. Please contact support.';
+        console.error('Verification failed', data);
+      }
+    }
+  })();
+</script>
+<% } %>
