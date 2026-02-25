@@ -49,12 +49,27 @@
       <div class="navbar-nav ms-auto">
         <% if (typeof currUser !== 'undefined' && currUser && currUser.role === 'owner') { %>
           <a class="nav-link" href="/listings/new">Add new Listing</a>
+          <a class="nav-link" href="/owner/dashboard">My Bookings</a>
+        <% } %>
+        <% if (typeof currUser !== 'undefined' && currUser && currUser.isAdmin) { %>
+          <a class="nav-link" href="/admin/dashboard">Admin Panel</a>
         <% } %>
         <% if (typeof currUser === 'undefined' || !currUser) { %>
-        <a class="nav-link" href="/signup">Sign up</a>
-        <a class="nav-link" href="/login">Log in</a>
-        <% } %> <% if (typeof currUser !== 'undefined' && currUser) { %>
-        <a class="nav-link" href="/logout"><b>Log out</b></a>
+          <a class="nav-link" href="/signup">Sign up</a>
+          <a class="nav-link" href="/login">Log in</a>
+        <% } %>
+        <% if (typeof currUser !== 'undefined' && currUser) { %>
+          <div class="nav-item dropdown">
+            <a class="nav-link dropdown-toggle" href="#" id="profileDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+              <i class="fas fa-user-circle"></i> Profile
+            </a>
+            <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="profileDropdown">
+              <li><a class="dropdown-item" href="/profile"><i class="fas fa-user"></i> View Profile</a></li>
+              <li><a class="dropdown-item" href="/profile/edit"><i class="fas fa-edit"></i> Edit Profile</a></li>
+              <li><hr class="dropdown-divider"></li>
+              <li><a class="dropdown-item" href="/logout"><i class="fas fa-sign-out-alt"></i> Log out</a></li>
+            </ul>
+          </div>
         <% } %>
       </div>
     </div>

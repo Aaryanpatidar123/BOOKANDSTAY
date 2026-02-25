@@ -1,0 +1,402 @@
+<% layout('layouts/boilerplate') %>
+
+<style>
+  .profile-container {
+    /* background: #f5f5f5; */
+    min-height: 100vh;
+    padding: 20px 0;
+  }
+
+  .profile-card {
+    background: white;
+    border-radius: 15px;
+    box-shadow: 0 15px 40px rgba(0, 0, 0, 0.2);
+    overflow: hidden;
+    margin-bottom: 20px;
+    max-width: 900px;
+    margin-left: auto;
+    margin-right: auto;
+  }
+
+  .profile-header-section {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    padding: 30px 25px;
+    text-align: center;
+    position: relative;
+  }
+
+  .profile-photo {
+    width: 110px;
+    height: 110px;
+    border-radius: 50%;
+    object-fit: cover;
+    border: 5px solid white;
+    margin: 0 auto 15px;
+    display: block;
+    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.25);
+  }
+
+  .profile-photo-placeholder {
+    width: 110px;
+    height: 110px;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.2);
+    margin: 0 auto 15px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border: 5px solid white;
+    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.25);
+  }
+
+  .profile-username {
+    font-size: 2rem;
+    font-weight: 700;
+    margin-bottom: 8px;
+  }
+
+  .profile-role-badge {
+    display: inline-block;
+    background: rgba(255, 255, 255, 0.3);
+    padding: 6px 16px;
+    border-radius: 20px;
+    font-weight: 600;
+    font-size: 0.9rem;
+    margin: 5px 3px;
+  }
+
+  .admin-badge {
+    background: #ff6b6b;
+    padding: 6px 16px;
+    border-radius: 20px;
+    font-weight: 600;
+    display: inline-block;
+    margin: 5px 3px;
+    font-size: 0.9rem;
+  }
+
+  .profile-body {
+    padding: 25px;
+  }
+
+  .info-section {
+    margin-bottom: 25px;
+  }
+
+  .info-section h4 {
+    color: #667eea;
+    font-weight: 700;
+    margin-bottom: 15px;
+    border-bottom: 2px solid #667eea;
+    padding-bottom: 10px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 1.1rem;
+  }
+
+  .info-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 15px;
+    margin-bottom: 20px;
+  }
+
+  .info-item {
+    background: #f8f9fa;
+    padding: 12px 15px;
+    border-radius: 10px;
+    border-left: 4px solid #667eea;
+  }
+
+  .info-item-label {
+    color: #666;
+    font-size: 0.8rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    margin-bottom: 5px;
+  }
+
+  .info-item-value {
+    color: #333;
+    font-size: 1rem;
+    font-weight: 600;
+  }
+
+  .section-title {
+    font-size: 1.2rem;
+    font-weight: 700;
+    color: #333;
+    margin: 20px 0 12px;
+  }
+
+  .list-item-card {
+    background: #f8f9fa;
+    padding: 12px;
+    border-radius: 8px;
+    margin-bottom: 10px;
+    border-left: 3px solid #667eea;
+    transition: all 0.3s ease;
+    font-size: 0.95rem;
+  }
+
+  .list-item-card:hover {
+    box-shadow: 0 4px 12px rgba(102, 126, 234, 0.15);
+    transform: translateX(3px);
+  }
+
+  .list-item-card a {
+    color: #667eea;
+    font-weight: 600;
+    text-decoration: none;
+  }
+
+  .list-item-card a:hover {
+    text-decoration: underline;
+  }
+
+  .list-item-details {
+    color: #666;
+    font-size: 0.9rem;
+    margin: 6px 0 3px;
+  }
+
+  .button-group {
+    display: flex;
+    gap: 12px;
+    margin-top: 15px;
+    justify-content: center;
+  }
+
+  .btn-edit {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    padding: 10px 25px;
+    border: none;
+    border-radius: 7px;
+    font-weight: 600;
+    font-size: 0.95rem;
+    cursor: pointer;
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+    text-decoration: none;
+    display: inline-block;
+    box-shadow: 0 4px 12px rgba(102, 126, 234, 0.35);
+  }
+
+  .btn-edit:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 16px rgba(102, 126, 234, 0.5);
+    color: white;
+  }
+
+  .btn-explore {
+    background: #f0f0f0;
+    color: #333;
+    padding: 10px 25px;
+    border: none;
+    border-radius: 7px;
+    font-weight: 600;
+    font-size: 0.95rem;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    text-decoration: none;
+    display: inline-block;
+  }
+
+  .btn-explore:hover {
+    background: #e0e0e0;
+    color: #333;
+  }
+
+  .empty-state {
+    text-align: center;
+    padding: 20px;
+    color: #999;
+  }
+
+  .empty-state-icon {
+    font-size: 2.5rem;
+    margin-bottom: 10px;
+    opacity: 0.5;
+  }
+
+  @media (max-width: 768px) {
+    .profile-header-section {
+      padding: 20px 15px;
+    }
+
+    .profile-username {
+      font-size: 1.6rem;
+    }
+
+    .profile-body {
+      padding: 15px;
+    }
+
+    .info-grid {
+      grid-template-columns: 1fr;
+    }
+
+    .button-group {
+      flex-direction: column;
+    }
+
+    .btn-edit, .btn-explore {
+      width: 100%;
+    }
+  }
+
+  .review-card {
+    background: #f8f9fa;
+    padding: 12px;
+    border-radius: 8px;
+    margin-bottom: 10px;
+    border-left: 3px solid #ffc107;
+    font-size: 0.95rem;
+  }
+
+  .review-rating {
+    font-size: 0.85rem;
+    color: #ffc107;
+    margin: 5px 0;
+  }
+
+  .review-comment {
+    color: #333;
+    margin: 8px 0;
+  }
+
+  .review-date {
+    font-size: 0.8rem;
+    color: #999;
+  }
+</style>
+
+<div class="profile-container">
+  <div class="container">
+    <div class="profile-card">
+      <!-- Header Section -->
+      <div class="profile-header-section">
+        <% if (user && user.profilePhoto && user.profilePhoto.url) { %>
+          <img src="<%= user.profilePhoto.url %>" alt="Profile" class="profile-photo">
+        <% } else { %>
+          <div class="profile-photo-placeholder">
+            <i class="fas fa-user" style="font-size: 5rem; color: rgba(255, 255, 255, 0.5);"></i>
+          </div>
+        <% } %>
+        
+        <div class="profile-username">
+          <%= (user && user.username) ? user.username : (currUser && currUser.username) ? currUser.username : '—' %>
+        </div>
+
+        <div>
+          <span class="profile-role-badge">
+            <i class="fas fa-user-circle"></i>
+            <%= (user && user.role) ? user.role.toUpperCase() : (currUser && currUser.role) ? currUser.role.toUpperCase() : 'USER' %>
+          </span>
+          <% if ((user && user.isAdmin) || (currUser && currUser.isAdmin)) { %>
+            <span class="admin-badge">
+              <i class="fas fa-crown"></i> ADMIN
+            </span>
+          <% } %>
+        </div>
+
+        <div class="button-group" style="margin-top: 20px;">
+          <a href="/profile/edit" class="btn-edit">
+            <i class="fas fa-edit"></i> Edit Profile
+          </a>
+          <a href="/listings" class="btn-explore">
+            <i class="fas fa-search"></i> Explore Listings
+          </a>
+        </div>
+      </div>
+
+      <!-- Body Section -->
+      <div class="profile-body">
+        <!-- Contact & Location Info -->
+        <div class="info-section">
+          <h4><i class="fas fa-info-circle"></i> Contact & Location Information</h4>
+          <div class="info-grid">
+            <div class="info-item">
+              <div class="info-item-label">Email</div>
+              <div class="info-item-value"><%= (user && user.email) ? user.email : (currUser && currUser.email) ? currUser.email : '—' %></div>
+            </div>
+            <div class="info-item">
+              <div class="info-item-label">Phone</div>
+              <div class="info-item-value"><%= (user && user.phone) ? user.phone : '—' %></div>
+            </div>
+            <div class="info-item">
+              <div class="info-item-label">City</div>
+              <div class="info-item-value"><%= (user && user.city) ? user.city : '—' %></div>
+            </div>
+            <div class="info-item">
+              <div class="info-item-label">State</div>
+              <div class="info-item-value"><%= (user && user.state) ? user.state : '—' %></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Bio Section -->
+        <% if ((user && user.bio) || (currUser && currUser.bio)) { %>
+          <div class="info-section">
+            <h4><i class="fas fa-quote-left"></i> About Me</h4>
+            <div style="background: #f8f9fa; padding: 20px; border-radius: 12px; border-left: 4px solid #667eea; font-style: italic; color: #555;">
+              <%= (user && user.bio) ? user.bio : (currUser && currUser.bio) ? currUser.bio : '—' %>
+            </div>
+          </div>
+        <% } %>
+
+        <!-- Listings Section -->
+        <% if (typeof listings !== 'undefined' && listings && listings.length > 0) { %>
+          <h4 class="section-title"><i class="fas fa-building"></i> Your Listings</h4>
+          <% listings.forEach(list => { %>
+            <div class="list-item-card">
+              <a href="/listings/<%= list._id %>"><i class="fas fa-home"></i> <%= list.title %></a>
+              <div class="list-item-details">📍 <%= (list.location) ? list.location : '—' %></div>
+              <div class="list-item-details">💰 ₹<%= (list.price) ? list.price : '—' %>/night</div>
+            </div>
+          <% }) %>
+        <% } %>
+
+        <!-- Bookings Section -->
+        <% if (typeof bookings !== 'undefined' && bookings && bookings.length > 0) { %>
+          <h4 class="section-title"><i class="fas fa-calendar-check"></i> Your Bookings</h4>
+          <% bookings.forEach(b => { %>
+            <div class="list-item-card">
+              <a href="/listings/<%= b.listing ? b.listing._id : '#' %>"><i class="fas fa-key"></i> <%= b.listing ? b.listing.title : 'Listing' %></a>
+              <div class="list-item-details">📅 <%= (b.startDate) ? new Date(b.startDate).toDateString() : '—' %> to <%= (b.endDate) ? new Date(b.endDate).toDateString() : '—' %></div>
+              <div class="list-item-details">💵 Total: ₹<%= b.totalPrice %> | <span class="badge <%= b.paid ? 'bg-success' : 'bg-warning' %>"><%= b.paid ? 'Paid' : 'Pending' %></span></div>
+            </div>
+          <% }) %>
+        <% } %>
+
+        <!-- Reviews Section -->
+        <% if (typeof reviews !== 'undefined' && reviews && reviews.length > 0) { %>
+          <h4 class="section-title"><i class="fas fa-star"></i> Your Reviews</h4>
+          <% reviews.forEach(r => { %>
+            <div class="review-card">
+              <div class="review-rating">
+                <% for (let i = 0; i < r.rating; i++) { %><i class="fas fa-star"></i><% } %>
+              </div>
+              <div class="review-comment"><%= r.comment %></div>
+              <div class="review-date">Reviewed on <%= (r.createdAt) ? new Date(r.createdAt).toDateString() : '—' %></div>
+            </div>
+          <% }) %>
+        <% } %>
+
+        <!-- Empty States -->
+        <% if ((typeof listings === 'undefined' || !listings || listings.length === 0) && 
+                (typeof bookings === 'undefined' || !bookings || bookings.length === 0) &&
+                (typeof reviews === 'undefined' || !reviews || reviews.length === 0)) { %>
+          <div class="empty-state">
+            <div class="empty-state-icon"><i class="fas fa-inbox"></i></div>
+            <p>No listings, bookings, or reviews yet.</p>
+            <p><a href="/listings" style="color: #667eea; text-decoration: none; font-weight: 600;">Start exploring</a> our amazing properties!</p>
+          </div>
+        <% } %>
+      </div>
+    </div>
+  </div>
+</div>
+

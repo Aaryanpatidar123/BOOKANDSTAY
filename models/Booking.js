@@ -18,6 +18,11 @@ const BookingSchema = new Schema({
     paid: { type: Boolean, default: false },
     stripeSessionId: String,
     razorpayOrderId: String,
+    status: { 
+        type: String, 
+        enum: ['pending', 'approved', 'rejected'], 
+        default: 'pending' 
+    },
     createdAt: { type: Date, default: Date.now }
 });
 

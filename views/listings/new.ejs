@@ -35,12 +35,15 @@
                 </div> -->
                 
                 <div class="mb-3 ">
-                    <label for="image" class="form-label">Upload Listing Image </label>
+                    <label for="images" class="form-label">Upload Room Photos (Select multiple images) </label>
                     <input 
-                     name="listing[image]"
+                     name="listing[images]"
                      type="file"
+                     multiple
+                     accept="image/*"
                      class="form-control" 
                      />
+                    <small class="form-text text-muted">You can upload up to 10 photos. Recommended: 1-4 high-quality images</small>
                 </div>
 
                 <div class="row">

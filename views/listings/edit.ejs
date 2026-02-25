@@ -34,12 +34,15 @@
            
 
             <div class="mb-3">
-                <label for="image-url" class="form-label">upload new Image </label>
+                <label for="images" class="form-label">Upload More Room Photos </label>
                 <input 
-                id="image-url" 
-                name="listing[image]" 
-                 type="file" class="form-control" />
-                
+                id="images" 
+                name="listing[images]" 
+                type="file" 
+                multiple
+                accept="image/*"
+                class="form-control" />
+                <small class="form-text text-muted">Upload up to 10 additional photos (existing photos will be replaced)</small>
             </div> 
              <!-- <div class="mb-3">
                 <label for="image-url" class="form-label">upload new Image </label>

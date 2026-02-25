@@ -48,14 +48,24 @@ module.exports.createListing=async (req, res, next) => {
         return res.redirect('/listings');
     }
 
-    let url = req.file.path;
-    let filename = req.file.filename;
+    const newListing = new Listing(req.body.listing);
+    newListing.owner = req.user._id;
     
-   const newListing = new Listing(req.body.listing);
-   newListing.owner = req.user._id;
-   newListing.image = {url,filename};
+    // Handle multiple image uploads
+    if(req.files && req.files.length > 0) {
+        newListing.images = req.files.map(file => ({
+            url: file.path,
+            filename: file.filename
+        }));
+        // Set the first image as the primary image
+        newListing.image = {
+            url: req.files[0].path,
+            filename: req.files[0].filename
+        };
+    }
+    
     await newListing.save();
-    req.flash("success","new listing created");
+    req.flash("success","New listing created with photos!");
     res.redirect("/listings");
 };
 
@@ -76,14 +86,21 @@ module.exports.updateListing =async (req, res) => {
     let { id } = req.params;
     let listing = await Listing.findByIdAndUpdate(id, { ...req.body.listing });
 
-    if(typeof req.file !== "undefined"){
-    let url = req.file.path;
-    let filename = req.file.filename;
-    listing.image = {url , filename};
-    await listing.save();
+    // Handle multiple image uploads
+    if(req.files && req.files.length > 0) {
+        listing.images = req.files.map(file => ({
+            url: file.path,
+            filename: file.filename
+        }));
+        // Update the primary image
+        listing.image = {
+            url: req.files[0].path,
+            filename: req.files[0].filename
+        };
+        await listing.save();
     }
 
-    req.flash("success","Listing updated");
+    req.flash("success","Listing updated with new photos!");
     res.redirect(`/listings/${id}`);
 };
 

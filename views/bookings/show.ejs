@@ -4,13 +4,26 @@
   <p>From: <%= booking.startDate.toDateString() %></p>
   <p>To: <%= booking.endDate.toDateString() %></p>
   <p>Total: &#8377;<%= booking.totalPrice %></p>
+  <p>Status: 
+    <% if (booking.status === 'pending') { %>
+      <span class="badge bg-warning">Pending Owner Approval</span>
+    <% } else if (booking.status === 'approved') { %>
+      <span class="badge bg-success">Approved</span>
+    <% } else if (booking.status === 'rejected') { %>
+      <span class="badge bg-danger">Rejected</span>
+    <% } %>
+  </p>
   <p>Paid: <%= booking.paid ? 'Yes' : 'No' %></p>
-  <% if(!booking.paid) { %>
+  <% if(booking.status === 'approved' && !booking.paid) { %>
     <a href="/bookings/pay/<%= booking._id %>" class="btn">Pay Now</a>
     <% if (isStripeMock) { %>
       <form method="POST" action="/bookings/<%= booking._id %>/pay" style="display:inline">
         <button type="submit" class="btn btn-warning">Simulate Payment (DEV)</button>
       </form>
     <% } %>
+  <% } else if (booking.status === 'pending') { %>
+    <p class="alert alert-info">Waiting for owner approval to proceed with payment.</p>
+  <% } else if (booking.status === 'rejected') { %>
+    <p class="alert alert-danger">This booking has been rejected by the owner.</p>
   <% } %>
 </div>

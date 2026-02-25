@@ -75,82 +75,14 @@ module.exports.createCheckoutSession = async (req, res, next) => {
             user: req.user._id,
             startDate: start,
             endDate: end,
-            totalPrice: computedTotal
+            totalPrice: computedTotal,
+            status: 'pending'
         });
         await booking.save();
 
-        // If dev mock enabled, simulate payment
-        if (isStripeMock) {
-            const mockSessionId = `mock_${booking._id}`;
-            booking.stripeSessionId = mockSessionId;
-            await booking.save();
-            req.flash('info', 'Mock payment created (development only). Redirecting to success.');
-            const successUrl = `${req.protocol}://${req.get('host')}/bookings/success?session_id=${mockSessionId}&bookingId=${booking._id}`;
-            return res.redirect(303, successUrl);
-        }
-
-        // If Razorpay is configured, create an order and render a pay page
-        const razorClientLocal = getRazorpayClient();
-        const amountPaise = Math.round(booking.totalPrice * 100);
-        if (razorClientLocal) {
-            try {
-                const order = await razorClientLocal.orders.create({
-                    amount: amountPaise,
-                    currency: 'INR',
-                    receipt: booking._id.toString(),
-                    payment_capture: 1
-                });
-                booking.razorpayOrderId = order.id;
-                await booking.save();
-                return res.render('bookings/pay', { booking, razorOrderId: order.id, razorKeyId: process.env.RAZORPAY_KEY_ID, amountPaise });
-            } catch (err) {
-                console.error('Razorpay order error:', err && err.message ? err.message : err);
-                req.flash('error', 'Payment provider error: ' + (err && err.message ? err.message : 'Unknown error'));
-                return res.redirect(`/listings/${listing._id}`);
-            }
-        } else {
-            // Razorpay not configured - provide a safe mock flow for development
-            const mockOrderId = `mock_rzp_order_${booking._id}`;
-            booking.razorpayOrderId = mockOrderId;
-            await booking.save();
-            // Render pay page in mock mode; client will show a simulate-pay button
-            return res.render('bookings/pay', { booking, razorOrderId: mockOrderId, isMock: true, amountPaise });
-        }
-
-        // Fallback: if Stripe not configured, show error
-        if (!stripeClient) {
-            req.flash('error','Payment gateway not configured. Please contact the site administrator.');
-            return res.redirect(`/listings/${listing._id}`);
-        }
-
-        try {
-            const session = await stripeClient.checkout.sessions.create({
-                payment_method_types: ['card'],
-                line_items: [
-                    {
-                        price_data: {
-                            currency: 'usd',
-                            product_data: { name: `${listing.title} — Booking` },
-                            unit_amount: Math.round(booking.totalPrice * 100)
-                        },
-                        quantity: 1
-                    }
-                ],
-                mode: 'payment',
-                success_url: `${req.protocol}://${req.get('host')}/bookings/success?session_id={CHECKOUT_SESSION_ID}&bookingId=${booking._id}`,
-                cancel_url: `${req.protocol}://${req.get('host')}/bookings/${booking._id}`,
-                metadata: { bookingId: booking._id.toString() }
-            });
-
-            booking.stripeSessionId = session.id;
-            await booking.save();
-
-            res.redirect(303, session.url);
-        } catch (err) {
-            console.error('Stripe checkout error:', err && err.message ? err.message : err);
-            req.flash('error', 'Payment provider error: ' + (err && err.message ? err.message : 'Unknown error'));
-            return res.redirect(`/listings/${listing._id}`);
-        }
+        req.flash('info', 'Booking request submitted! Waiting for owner approval before proceeding to payment.');
+        const bookingPageUrl = `${req.protocol}://${req.get('host')}/bookings/${booking._id}`;
+        return res.redirect(303, bookingPageUrl);
     } catch (e) {
         next(e);
     }
@@ -280,17 +212,17 @@ module.exports.renderPayPage = async (req, res, next) => {
             req.flash('success','Booking already paid');
             return res.redirect(`/bookings/${booking._id}`);
         }
+        // Check if booking is approved before allowing payment
+        if(booking.status !== 'approved') {
+            req.flash('error','Booking must be approved by owner before payment');
+            return res.redirect(`/bookings/${booking._id}`);
+        }
         // Ensure the logged in user owns the booking
         if (!req.user || booking.user.toString() !== req.user._id.toString()) {
             req.flash('error','You are not authorized to pay for this booking');
             return res.redirect('/listings');
         }
         const razorClientLocal = getRazorpayClient();
-        // Ensure the logged in user owns the booking
-        if (!req.user || booking.user.toString() !== req.user._id.toString()) {
-            req.flash('error','You are not authorized to pay for this booking');
-            return res.redirect('/listings');
-        }
         const amountPaise = Math.round(booking.totalPrice * 100);
         if (!razorClientLocal) {
             // Render mock pay page so devs can simulate payment without real keys

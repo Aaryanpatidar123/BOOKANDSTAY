@@ -38,16 +38,36 @@
                     <label class="form-label">Register as</label>
                     <div>
                         <div class="form-check form-check-inline">
-                            <input class="form-check-input" type="radio" name="role" id="roleUser" value="user" <%= (typeof defaultRole === 'undefined' || defaultRole === 'user') ? 'checked' : '' %> >
+                            <input class="form-check-input" type="radio" name="role" id="roleUser" value="user" <%= (typeof defaultRole === 'undefined' || defaultRole === 'user') ? 'checked' : '' %> onchange="updateAdminCodeVisibility()">
                             <label class="form-check-label" for="roleUser">User</label>
                         </div>
                         <div class="form-check form-check-inline">
-                            <input class="form-check-input" type="radio" name="role" id="roleOwner" value="owner" <%= defaultRole === 'owner' ? 'checked' : '' %> >
+                            <input class="form-check-input" type="radio" name="role" id="roleOwner" value="owner" <%= defaultRole === 'owner' ? 'checked' : '' %> onchange="updateAdminCodeVisibility()">
                             <label class="form-check-label" for="roleOwner">Owner</label>
+                        </div>
+                        <div class="form-check form-check-inline">
+                            <input class="form-check-input" type="radio" name="role" id="roleAdmin" value="admin" <%= defaultRole === 'admin' ? 'checked' : '' %> onchange="updateAdminCodeVisibility()">
+                            <label class="form-check-label" for="roleAdmin">Admin</label>
                         </div>
                     </div>
                 </div>
+                <div class="mb-3" id="adminCodeField" style="display: <%= defaultRole === 'admin' ? 'block' : 'none' %>;">
+                    <label for="admin_code" class="form-label">Admin code</label>
+                    <input name="admin_code" id="admin_code" type="text" class="form-control" placeholder="Enter admin secret code">
+                    <div class="form-text">Required to create an admin account.</div>
+                </div>
 <button class="btn btn-success">SignUp</button>
             </form>
+            <script>
+              function updateAdminCodeVisibility() {
+                const role = document.querySelector('input[name="role"]:checked').value;
+                const adminCodeField = document.getElementById('adminCodeField');
+                if (role === 'admin') {
+                  adminCodeField.style.display = 'block';
+                } else {
+                  adminCodeField.style.display = 'none';
+                }
+              }
+            </script>
         </div>
  </div>

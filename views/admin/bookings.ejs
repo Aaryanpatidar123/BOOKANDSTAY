@@ -1,0 +1,191 @@
+<% layout('layouts/boilerplate') -%>
+
+<style>
+  .bookings-page-container {
+    background: #f8f9fa;
+    min-height: 100vh;
+    padding: 30px 0;
+  }
+
+  .page-header {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    padding: 30px 25px;
+    border-radius: 12px;
+    margin-bottom: 30px;
+    box-shadow: 0 10px 30px rgba(102, 126, 234, 0.2);
+  }
+
+  .page-header h2 {
+    margin: 0;
+    font-size: 2rem;
+    font-weight: 700;
+  }
+
+  .bookings-card {
+    background: white;
+    border-radius: 12px;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.08);
+    overflow: hidden;
+  }
+
+  .table {
+    margin-bottom: 0;
+    font-size: 0.95rem;
+  }
+
+  .table thead {
+    background: #f8f9fa;
+    border-bottom: 2px solid #667eea;
+  }
+
+  .table thead th {
+    color: #333;
+    font-weight: 700;
+    border: none;
+    padding: 13px 15px;
+    text-align: left;
+  }
+
+  .table tbody td {
+    padding: 13px 15px;
+    border-color: #e0e0e0;
+    vertical-align: middle;
+  }
+
+  .table tbody tr:hover {
+    background: #f8f9fa;
+  }
+
+  .booking-id {
+    font-family: 'Courier New', monospace;
+    font-size: 0.85rem;
+    color: #667eea;
+    font-weight: 600;
+  }
+
+  .paid-status {
+    display: inline-block;
+    padding: 5px 10px;
+    border-radius: 6px;
+    font-weight: 600;
+    font-size: 0.85rem;
+  }
+
+  .paid-yes {
+    background: #d3f9d8;
+    color: #2b8a3e;
+  }
+
+  .paid-no {
+    background: #ffe0e0;
+    color: #c92a2a;
+  }
+
+  .btn-view {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    border: none;
+    padding: 6px 14px;
+    border-radius: 6px;
+    font-weight: 600;
+    font-size: 0.85rem;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    text-decoration: none;
+    display: inline-block;
+  }
+
+  .btn-view:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+    color: white;
+  }
+
+  .booking-count {
+    display: inline-block;
+    background: rgba(255, 255, 255, 0.2);
+    padding: 8px 16px;
+    border-radius: 20px;
+    font-weight: 600;
+    margin-top: 10px;
+  }
+
+  .empty-state {
+    padding: 50px 20px;
+    text-align: center;
+    color: #999;
+  }
+
+  .empty-state-icon {
+    font-size: 3rem;
+    margin-bottom: 15px;
+    opacity: 0.5;
+  }
+
+  @media (max-width: 768px) {
+    .page-header h2 {
+      font-size: 1.5rem;
+    }
+
+    .table {
+      font-size: 0.85rem;
+    }
+
+    .table thead th,
+    .table tbody td {
+      padding: 8px 10px;
+    }
+
+    .booking-id {
+      font-size: 0.75rem;
+    }
+  }
+</style>
+
+<div class="bookings-page-container">
+  <div class="container">
+    <div class="page-header">
+      <h2><i class="fas fa-calendar-check"></i> All Bookings</h2>
+      <div class="booking-count">Total Bookings: <%= bookings ? bookings.length : 0 %></div>
+    </div>
+
+    <div class="bookings-card">
+      <% if (!bookings || bookings.length === 0) { %>
+        <div class="empty-state">
+          <div class="empty-state-icon"><i class="fas fa-inbox"></i></div>
+          <p>No bookings found.</p>
+        </div>
+      <% } else { %>
+        <table class="table">
+          <thead>
+            <tr>
+              <th>Booking ID</th>
+              <th>User</th>
+              <th>Listing</th>
+              <th>Check-in</th>
+              <th>Check-out</th>
+              <th>Amount</th>
+              <th>Payment Status</th>
+              <th>Action</th>
+            </tr>
+          </thead>
+          <tbody>
+            <% bookings.forEach((b) => { %>
+              <tr>
+                <td><span class="booking-id"><%= b._id.toString().slice(-6) %></span></td>
+                <td><strong><%= b.user ? b.user.email : '—' %></strong></td>
+                <td><%= b.listing ? b.listing.title : '—' %></td>
+                <td><%= b.startDate ? new Date(b.startDate).toDateString() : '—' %></td>
+                <td><%= b.endDate ? new Date(b.endDate).toDateString() : '—' %></td>
+                <td><strong>₹<%= b.totalPrice %></strong></td>
+                <td><span class="paid-status <%= b.paid ? 'paid-yes' : 'paid-no' %>"><%= b.paid ? '✓ Paid' : '✗ Unpaid' %></span></td>
+                <td><a class="btn-view" href="/admin/bookings/<%= b._id %>"><i class="fas fa-eye"></i> View</a></td>
+              </tr>
+            <% }) %>
+          </tbody>
+        </table>
+      <% } %>
+    </div>
+  </div>
+</div>

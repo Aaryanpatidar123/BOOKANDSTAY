@@ -1,0 +1,207 @@
+<% layout('layouts/boilerplate') -%>
+
+<style>
+  .users-page-container {
+    background: #f8f9fa;
+    min-height: 100vh;
+    padding: 30px 0;
+  }
+
+  .page-header {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    padding: 30px 25px;
+    border-radius: 12px;
+    margin-bottom: 30px;
+    box-shadow: 0 10px 30px rgba(102, 126, 234, 0.2);
+  }
+
+  .page-header h2 {
+    margin: 0;
+    font-size: 2rem;
+    font-weight: 700;
+  }
+
+  .users-card {
+    background: white;
+    border-radius: 12px;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.08);
+    overflow: hidden;
+  }
+
+  .table {
+    margin-bottom: 0;
+    font-size: 0.95rem;
+  }
+
+  .table thead {
+    background: #f8f9fa;
+    border-bottom: 2px solid #667eea;
+  }
+
+  .table thead th {
+    color: #333;
+    font-weight: 700;
+    border: none;
+    padding: 13px 15px;
+    text-align: left;
+  }
+
+  .table tbody td {
+    padding: 13px 15px;
+    border-color: #e0e0e0;
+    vertical-align: middle;
+  }
+
+  .table tbody tr:hover {
+    background: #f8f9fa;
+  }
+
+  .badge-role {
+    background: #667eea;
+    color: white;
+    padding: 5px 10px;
+    border-radius: 6px;
+    font-weight: 600;
+    font-size: 0.85rem;
+  }
+
+  .badge-admin {
+    background: #ff6b6b;
+    color: white;
+    padding: 5px 10px;
+    border-radius: 6px;
+    font-weight: 600;
+    font-size: 0.85rem;
+  }
+
+  .badge-user {
+    background: #51cf66;
+    color: white;
+  }
+
+  .btn-toggle-admin {
+    background: linear-gradient(135deg, #ffa94d 0%, #fd7e14 100%);
+    color: white;
+    border: none;
+    padding: 6px 12px;
+    border-radius: 6px;
+    font-weight: 600;
+    font-size: 0.85rem;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    display: inline-block;
+    margin-right: 5px;
+    text-decoration: none;
+  }
+
+  .btn-toggle-admin:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(255, 169, 77, 0.3);
+  }
+
+  .btn-make-admin {
+    background: linear-gradient(135deg, #51cf66 0%, #37b24d 100%);
+  }
+
+  .btn-make-admin:hover {
+    box-shadow: 0 4px 12px rgba(81, 207, 102, 0.3);
+  }
+
+  .btn-delete {
+    background: linear-gradient(135deg, #ff6b6b 0%, #fa5252 100%);
+    color: white;
+    border: none;
+    padding: 6px 12px;
+    border-radius: 6px;
+    font-weight: 600;
+    font-size: 0.85rem;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    display: inline-block;
+  }
+
+  .btn-delete:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(255, 107, 107, 0.3);
+  }
+
+  .user-count {
+    display: inline-block;
+    background: rgba(255, 255, 255, 0.2);
+    padding: 8px 16px;
+    border-radius: 20px;
+    font-weight: 600;
+    margin-top: 10px;
+  }
+
+  @media (max-width: 768px) {
+    .page-header h2 {
+      font-size: 1.5rem;
+    }
+
+    .table {
+      font-size: 0.85rem;
+    }
+
+    .table thead th,
+    .table tbody td {
+      padding: 8px 10px;
+    }
+  }
+</style>
+
+<div class="users-page-container">
+  <div class="container">
+    <div class="page-header">
+      <h2><i class="fas fa-users"></i> Manage Users</h2>
+      <div class="user-count">Total Users: <%= users ? users.length : 0 %></div>
+    </div>
+
+    <div class="users-card">
+      <% if (users && users.length > 0) { %>
+        <table class="table">
+          <thead>
+            <tr>
+              <th>Email</th>
+              <th>Username</th>
+              <th>Role</th>
+              <th>Admin Status</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            <% users.forEach((u) => { %>
+              <tr>
+                <td><strong><%= u.email %></strong></td>
+                <td><%= u.username || '—' %></td>
+                <td><span class="badge-role badge-user"><%= u.role %></span></td>
+                <td><%= u.isAdmin ? '<span class="badge-admin">✓ Admin</span>' : '<span style="color: #999;">Regular User</span>' %></td>
+                <td>
+                  <form action="/admin/users/<%= u._id %>/toggle-admin" method="POST" style="display:inline">
+                    <button class="btn-toggle-admin <%= u.isAdmin ? '' : 'btn-make-admin' %>">
+                      <i class="fas <%= u.isAdmin ? 'fa-user-slash' : 'fa-crown' %>"></i> <%= u.isAdmin ? 'Revoke Admin' : 'Make Admin' %>
+                    </button>
+                  </form>
+                  
+                  <% if ((currUser && currUser._id && currUser._id.toString()) !== (u._id.toString())) { %>
+                    <form action="/admin/users/<%= u._id %>/delete" method="POST" style="display:inline" onsubmit="return confirm('Are you sure? This will delete the user and all their reviews.');">
+                      <button class="btn-delete">
+                        <i class="fas fa-trash"></i> Delete
+                      </button>
+                    </form>
+                  <% } %>
+                </td>
+              </tr>
+            <% }) %>
+          </tbody>
+        </table>
+      <% } else { %>
+        <div style="padding: 40px; text-align: center; color: #999;">
+          <i class="fas fa-inbox" style="font-size: 3rem; margin-bottom: 15px; opacity: 0.5;"></i>
+          <p>No users found.</p>
+        </div>
+      <% } %>
+    </div>
+  </div>
+</div>

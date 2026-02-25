@@ -11,6 +11,23 @@ const userSchema = new Schema({
         enum: ['user', 'owner'],
         default: 'user'
     }
+    ,
+    isAdmin: {
+        type: Boolean,
+        default: false
+    },
+    profilePhoto: {
+        url: String,
+        filename: String
+    },
+    phone: String,
+    bio: String,
+    city: String,
+    state: String,
+    createdAt: {
+        type: Date,
+        default: Date.now
+    }
 });
 
 userSchema.plugin(passportLocalMongoose);

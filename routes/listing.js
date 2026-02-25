@@ -2,7 +2,7 @@ const express = require("express");
 const router = express.Router();
 const wrapAsync = require('../utils/wrapAsync');
 const Listing = require("../models/Listing.js");
-const {isLoggedIn , isOwner ,validateListing, isOwnerRole, classifyCategoryMiddleware}=require("../middleware.js");
+const {isLoggedIn , isOwner ,validateListing, isOwnerRole, classifyCategoryMiddleware, isOwnerOrAdmin}=require("../middleware.js");
 
 const listingController = require("../controllers/listing.js");
 const multer = require('multer');
@@ -16,7 +16,7 @@ router.route("/")
 .get(  wrapAsync(listingController.index)
 )
 .post(isLoggedIn, isOwnerRole, 
-    upload.single('listing[image]'),
+    upload.array('listing[images]', 10),
     classifyCategoryMiddleware,
     validateListing,
      wrapAsync(listingController.createListing)
@@ -36,14 +36,14 @@ router.route("/:id")
 )
 .put(isLoggedIn,
     isOwner,
-    upload.single('listing[image]'),
+    upload.array('listing[images]', 10),
     classifyCategoryMiddleware,
     validateListing,
     wrapAsync(listingController.updateListing)
 )
-.delete(isLoggedIn, isOwner,
-    wrapAsync(listingController.destroyListing)
-);
+ .delete(isLoggedIn, isOwnerOrAdmin,
+     wrapAsync(listingController.destroyListing)
+ );
 
 
 

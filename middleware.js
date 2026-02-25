@@ -58,6 +58,27 @@ module.exports.isOwner = async (req, res, next) => {
   next();
 };
 
+// Allow access to resource for either owner or admin
+module.exports.isOwnerOrAdmin = async (req, res, next) => {
+    const { id } = req.params;
+    const listing = await Listing.findById(id);
+    if (!listing) {
+        req.flash('error', 'Listing not found');
+        return res.redirect('/listings');
+    }
+    // If user is admin, allow
+    if (req.isAuthenticated() && req.user && req.user.isAdmin) {
+        return next();
+    }
+    const ownerId = listing.owner && listing.owner._id ? listing.owner._id : listing.owner;
+    const userId = (req.user && req.user._id) ? req.user._id : (res.locals.currUser && res.locals.currUser._id ? res.locals.currUser._id : null);
+    if (!userId || !ownerId || ownerId.toString() !== userId.toString()) {
+        req.flash('error', 'You are not authorized to perform that action');
+        return res.redirect(`/listings/${id}`);
+    }
+    next();
+};
+
 // Ensure the logged-in user has role 'owner' to perform owner-only actions
 module.exports.isOwnerRole = (req, res, next) => {
     if(!req.isAuthenticated() || !req.user || req.user.role !== 'owner'){
@@ -101,4 +122,31 @@ module.exports.isReviewAuther = async (req, res, next) => {
     return res.redirect(`/listings/${id}`);
   }
   next();
+};
+
+// Admin check: ensure logged in and user.isAdmin === true
+module.exports.isAdmin = (req, res, next) => {
+        if (!req.isAuthenticated() || !req.user || !req.user.isAdmin) {
+                req.flash('error', 'You do not have permission to access that page');
+                return res.redirect('/');
+        }
+        next();
+};
+
+// Allow owner of listing or admin to perform action
+module.exports.isOwnerOrAdmin = async (req, res, next) => {
+  const { id } = req.params;
+  const listing = await Listing.findById(id);
+  if (!listing) {
+    req.flash('error', 'Listing not found');
+    return res.redirect('/listings');
+  }
+  const ownerId = listing.owner && listing.owner._id ? listing.owner._id : listing.owner;
+  const userId = (req.user && req.user._id) ? req.user._id : (res.locals.currUser && res.locals.currUser._id ? res.locals.currUser._id : null);
+  // Allow if owner or if admin
+  if ((userId && ownerId && ownerId.toString() === userId.toString()) || (req.user && req.user.isAdmin)) {
+    return next();
+  }
+  req.flash('error', 'You do not have permission to perform this action');
+  return res.redirect(`/listings/${id}`);
 };

@@ -19,7 +19,7 @@ const LocalStrategy = require("passport-local");
 const User = require("./models/user.js");
 // Session store backed by MongoDB
 const connectMongo = require('connect-mongo');
-
+// Support multiple export shapes: { MongoStore, default } or direct function
 const MongoStore = connectMongo.MongoStore || connectMongo.default || connectMongo;
 
 const e = require('express');
@@ -32,8 +32,9 @@ const stripeWebhookHandler = require('./routes/webhooks').stripeWebhookHandler;
 
 
 const PORT = 4655;
-// const MONGO_URL = "mongodb://127.0.0.1:27017/BOOK&STAY";
-const dbUrl=process.env.ATLASDB_URL;
+ //const MONGO_URL = "mongodb://127.0.0.1:27017/BOOK&STAY";
+// const dburl = "mongodb://127.0.0.1:27017/BOOK&STAY";
+ const dbUrl=process.env.ATLASDB_URL;
 
 // Validate DB URL early and provide actionable errors
 if (!dbUrl) {
@@ -47,7 +48,8 @@ if (/\s/.test(dbUrl)) {
     process.exit(1);
 }
 
-
+// Try connecting to Atlas first, but fall back to a local MongoDB for development if needed
+// If FORCE_LOCAL_DB is set, prefer a local MongoDB immediately (useful when Atlas is unreachable)
 if (process.env.FORCE_LOCAL_DB === 'true') {
     (async function connectLocal() {
         const fallback = process.env.LOCAL_MONGO_URL || 'mongodb://127.0.0.1:27017/bookandstay_dev';
@@ -69,8 +71,8 @@ if (process.env.FORCE_LOCAL_DB === 'true') {
     })();
 }
 (async function connectToMongo() {
-    // Allow overriding the target DB name via env 
-    const atlasDbName = process.env.ATLASDB_URL || undefined;
+    // Allow overriding the target DB name via env (useful when URL doesn't include DB name)
+    const atlasDbName = process.env.ATLAS_DBNAME || undefined;
     const hasDbNameInUrl = /mongodb(?:\+srv)?:\/\/[^\/]+\/[^?]+/.test(dbUrl);
     if (!hasDbNameInUrl && !atlasDbName) {
         console.warn('Warning: ATLASDB_URL does not contain a database name and ATLAS_DBNAME is not set. Consider setting ATLAS_DBNAME or including the DB in the URL.');
@@ -84,7 +86,7 @@ if (process.env.FORCE_LOCAL_DB === 'true') {
         return;
     } catch (err) {
         console.error('Failed to connect to MongoDB:', err && err.message ? err.message : err);
-
+        // Detect TLS/SSL specific errors and print targeted tips
         const tlsError = err && ((err.message && (err.message.toLowerCase().includes('ssl') || err.message.toLowerCase().includes('tls') || err.message.toLowerCase().includes('tlsv1'))) || (err.cause && err.cause.code && String(err.cause.code).toLowerCase().includes('err_ssl')));
         if (tlsError) {
             console.error('\nMongoDB TLS/SSL handshake failed. Common causes and suggestions:');
@@ -108,7 +110,7 @@ if (process.env.FORCE_LOCAL_DB === 'true') {
                 await mongoose.connect(fallback);
                 console.log('connected to local MongoDB (fallback)');
                 console.log(`Connected to MongoDB host=${mongoose.connection.host} db=${mongoose.connection.name}`);
-               // Setup session, middlewares, and routes now that local DB is available
+                // Setup session, middlewares, and routes now that local DB is available
                 await startServer();
                 return;
             } catch (err2) {
@@ -206,7 +208,7 @@ async function startServer() {
 
     const sessionOptions = {
         store,
-        secret: process.env.SESSION_SECRET ,
+        secret: process.env.SESSION_SECRET || "mysupersecretcode",
         resave: false,
         saveUninitialized: false,
         cookie: {
@@ -244,6 +246,10 @@ async function startServer() {
     const adminRouter = require('./routes/admin');
     app.use('/admin', adminRouter);
 
+    // Owner routes for managing bookings
+    const ownerRouter = require('./routes/owner');
+    app.use('/owner', ownerRouter);
+
     // Stripe webhook endpoint (raw body) - requires STRIPE_WEBHOOK_SECRET env var
     app.post('/webhooks/stripe', express.raw({ type: 'application/json' }), stripeWebhookHandler);
 
@@ -256,6 +262,11 @@ async function startServer() {
     app.use((err, req, res, next) => {
         const statusCode = err.statusCode || 500;
         const message = err.message || 'Something went wrong';
+        // If headers already sent, delegate to default Express error handler
+        if (res.headersSent) {
+            console.error('Error after headers sent:', err);
+            return next(err);
+        }
         res.status(statusCode).render("error.ejs", { message });
     });
 

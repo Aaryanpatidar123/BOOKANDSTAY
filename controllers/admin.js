@@ -1,5 +1,9 @@
 const fs = require('fs');
 const path = require('path');
+const User = require('../models/user');
+const Listing = require('../models/Listing');
+const Booking = require('../models/Booking');
+const mongoose = require('mongoose');
 
 // Dev-only: render a small page to configure payment env vars (RAZORPAY keys)
 module.exports.renderPayConfig = (req, res) => {
@@ -217,5 +221,107 @@ module.exports.sendTestMail = async (req, res, next) => {
     console.error('sendTestMail error:', e && e.message ? e.message : e);
     req.flash('error', 'Failed to send test email. See console for details.');
     res.redirect('/admin/email-config');
+  }
+};
+
+// Basic admin dashboard showing counts
+module.exports.renderDashboard = async (req, res, next) => {
+  try {
+    const users = await User.countDocuments();
+    const listings = await Listing.countDocuments();
+    const bookings = await Booking.countDocuments();
+    res.render('admin/dashboard', { users, listings, bookings });
+  } catch (e) {
+    next(e);
+  }
+};
+
+// Render paginated list of users for admin management
+module.exports.renderUsers = async (req, res, next) => {
+  try {
+    const users = await User.find({}).lean().sort({ createdAt: -1 }).limit(200);
+    res.render('admin/users', { users });
+  } catch (e) {
+    next(e);
+  }
+};
+
+module.exports.toggleUserAdmin = async (req, res, next) => {
+  try {
+    const { id } = req.params;
+    if (!id) return res.redirect('/admin/users');
+    // Prevent demoting yourself accidentally
+    if (req.user && req.user._id && req.user._id.toString() === id) {
+      req.flash('error', 'You cannot change your own admin status');
+      return res.redirect('/admin/users');
+    }
+    const user = await User.findById(id);
+    if (!user) {
+      req.flash('error', 'User not found');
+      return res.redirect('/admin/users');
+    }
+    user.isAdmin = !user.isAdmin;
+    await user.save();
+    req.flash('success', `User ${user.email} isAdmin set to ${user.isAdmin}`);
+    res.redirect('/admin/users');
+  } catch (e) {
+    next(e);
+  }
+};
+
+// Admin: list bookings
+module.exports.renderBookings = async (req, res, next) => {
+  try {
+    const bookings = await Booking.find({}).populate('user').populate('listing').lean().sort({ createdAt: -1 }).limit(500);
+    res.render('admin/bookings', { bookings });
+  } catch (e) {
+    next(e);
+  }
+};
+
+// Admin: show booking details
+module.exports.renderBookingDetails = async (req, res, next) => {
+  try {
+    const { id } = req.params;
+    if (!mongoose.Types.ObjectId.isValid(id)) return res.redirect('/admin/bookings');
+    const booking = await Booking.findById(id).populate('user').populate('listing').lean();
+    if (!booking) {
+      req.flash('error', 'Booking not found');
+      return res.redirect('/admin/bookings');
+    }
+    res.render('admin/booking_show', { booking });
+  } catch (e) {
+    next(e);
+  }
+};
+
+// Admin: delete user and clean up references (demote listings/bookings and remove reviews)
+module.exports.deleteUser = async (req, res, next) => {
+  try {
+    const { id } = req.params;
+    if (!id) return res.redirect('/admin/users');
+    // Prevent deleting yourself
+    if (req.user && req.user._id && req.user._id.toString() === id) {
+      req.flash('error', 'You cannot delete your own account');
+      return res.redirect('/admin/users');
+    }
+    const user = await User.findById(id);
+    if (!user) {
+      req.flash('error', 'User not found');
+      return res.redirect('/admin/users');
+    }
+    // Remove reviews by this user
+    const Review = require('../models/review');
+    await Review.deleteMany({ auther: user._id });
+    // For listings owned by this user, clear owner field so they become unowned
+    await Listing.updateMany({ owner: user._id }, { $set: { owner: null } });
+    // For bookings by this user, set user to null to preserve booking record
+    await Booking.updateMany({ user: user._id }, { $set: { user: null } });
+    // Finally delete the user
+    await User.findByIdAndDelete(user._id);
+    req.flash('success', `Deleted user ${user.email} and cleaned references`);
+    res.redirect('/admin/users');
+  } catch (e) {
+    next(e);
   }
 };
