@@ -88,6 +88,11 @@
         .tax-toggle{ border: 1px solid black; border-radius: 1rem; height: 3.5rem; padding:1rem; margin-left: 5rem; display: flex; align-items: center; }
     </style>
 
+    <% if (typeof search !== 'undefined' && search.trim().length) { %>
+        <div class="alert alert-info">
+            Search results for "<%= search %>" (<%= allListings.length %>)
+        </div>
+    <% } %>
     <div id="filters">
         <div class="filter" data-cat="All">
            <div><i class="fa-solid fa-list"></i></div>

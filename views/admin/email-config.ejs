@@ -8,6 +8,7 @@
 
           <form method="POST" action="/admin/email-config">
             <h5>SMTP (App Password)</h5>
+            <p class="small text-muted">If you prefer SendGrid instead of SMTP/Gmail, set <code>SENDGRID_API_KEY</code> and <code>EMAIL_FROM</code> in your <code>.env</code>; no form input is required.</p>
             <div class="mb-3">
               <label class="form-label">SMTP_HOST</label>
               <input name="smtp_host" class="form-control" value="<%= smtpHost %>" />

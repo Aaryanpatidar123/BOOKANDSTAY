@@ -1,4 +1,16 @@
 const nodemailer = require('nodemailer');
+// sendgrid will be used if SENDGRID_API_KEY is provided in env
+let sgMail;
+if (process.env.SENDGRID_API_KEY) {
+    try {
+        sgMail = require('@sendgrid/mail');
+        sgMail.setApiKey(process.env.SENDGRID_API_KEY);
+        console.log('SendGrid configured');
+    } catch (e) {
+        console.warn('Failed to load @sendgrid/mail, falling back to nodemailer:', e.message || e);
+        sgMail = null;
+    }
+}
 
 const { getAuthUrl, loadSavedRefreshToken, createOAuth2Client } = require('./gmailOAuth');
 
@@ -78,6 +90,21 @@ async function createTransporter() {
 }
 
 async function sendMail({ to, subject, text, html }) {
+    // if SendGrid is configured, use it directly
+    if (sgMail) {
+        const from = process.env.EMAIL_FROM || 'no-reply@bookandstay.local';
+        try {
+            const msg = { to, from, subject, text, html };
+            const [response] = await sgMail.send(msg);
+            console.log('SendGrid message sent:', response && response.statusCode);
+            return response;
+        } catch (err) {
+            console.error('SendGrid send error:', err && err.message ? err.message : err);
+            // throw to allow caller to handle/resend
+            throw err;
+        }
+    }
+    // otherwise fall back to nodemailer transport
     try {
         const transporter = await createTransporter();
         // Prefer explicit EMAIL_FROM, else fall back to SMTP user for better deliverability when using Gmail

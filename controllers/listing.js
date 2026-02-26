@@ -1,8 +1,30 @@
 const Listing=require("../models/Listing");
 
 
+// utility used to escape user input when building a regex for Mongo
+function escapeRegex(text) {
+    // see https://stackoverflow.com/questions/3561493
+    return text.replace(/[-[\]{}()*+?.,\\^$|#\s]/g, "\\$&");
+}
+
 module.exports.index = async (req, res) => {
-    const allListings = await Listing.find({});
+    // support simple search via query parameter `search` (submitted from navbar)
+    let allListings;
+    const { search } = req.query;
+    if (search) {
+        const safe = escapeRegex(search);
+        const regex = new RegExp(safe, 'i');
+        // match title or location or country
+        allListings = await Listing.find({
+            $or: [
+                { title: regex },
+                { location: regex },
+                { country: regex }
+            ]
+        });
+    } else {
+        allListings = await Listing.find({});
+    }
     const categories = ["Trending","Rooms","Iconic Cities","Mountains","Castles","Camping","Farms","Arctic"];
     const listingsByCategory = {};
     categories.forEach(cat => listingsByCategory[cat] = []);
@@ -11,7 +33,7 @@ module.exports.index = async (req, res) => {
         if(!listingsByCategory[cat]) listingsByCategory[cat] = [];
         listingsByCategory[cat].push(listing);
     });
-    res.render("listings/index.ejs", { allListings, listingsByCategory, categories });
+    res.render("listings/index.ejs", { allListings, listingsByCategory, categories, search });
 };
 
 
