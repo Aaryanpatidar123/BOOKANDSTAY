@@ -175,8 +175,20 @@
               <tr>
                 <td><strong><%= u.email %></strong></td>
                 <td><%= u.username || '—' %></td>
-                <td><span class="badge-role badge-user"><%= u.role %></span></td>
-                <td><%= u.isAdmin ? '<span class="badge-admin">✓ Admin</span>' : '<span style="color: #999;">Regular User</span>' %></td>
+                <td>
+                  <% if (u.role === 'owner') { %>
+                    <span class="badge-role badge-user" style="background: #fd7e14;">owner</span>
+                  <% } else { %>
+                    <span class="badge-role badge-user">user</span>
+                  <% } %>
+                </td>
+                <td>
+                  <% if (u.isAdmin) { %>
+                    <span class="badge-admin">✓ Admin</span>
+                  <% } else { %>
+                    <span style="color: #999;">Regular User</span>
+                  <% } %>
+                </td>
                 <td>
                   <form action="/admin/users/<%= u._id %>/toggle-admin" method="POST" style="display:inline">
                     <button class="btn-toggle-admin <%= u.isAdmin ? '' : 'btn-make-admin' %>">
