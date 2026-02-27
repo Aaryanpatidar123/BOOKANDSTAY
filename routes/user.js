@@ -16,12 +16,6 @@ router.route("/signup")
 .get( userController.renderSignupForm)
 .post( wrapAsync(userController.signup));
 
-router.route('/signup/verify')
-.get(userController.renderOtpForm)
-.post(wrapAsync(userController.verifyOtp));
-
-router.post('/signup/resend', wrapAsync(userController.resendOtp));
-
 
 router.route("/login")
 .get( userController.renderLoginForm)
